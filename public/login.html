@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - FL-AHPS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+    <svg class="icon-sun" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+    <svg class="icon-moon" style="display:none" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+  </button>
+  <div class="centered-page">
+    <div class="auth-card">
+      <svg class="logo-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M24 4L6 12v12c0 11 7.5 21 18 24 10.5-3 18-13 18-24V12L24 4z" fill="url(#shield)" stroke="currentColor" stroke-width="1.5"/>
+        <defs><linearGradient id="shield" x1="6" y1="4" x2="42" y2="36" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#4f46e5"/></linearGradient></defs>
+      </svg>
+      <h1>Login</h1>
+      <p class="subtitle">Enter your credentials</p>
+      <div id="error" class="error-msg" style="display: none;"></div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Your browser may ask for location — we use it to show your real city/country in login history (including when testing from this device). You can deny and we’ll use IP only.</p>
+        <details style="margin-bottom: 1rem;">
+          <summary style="cursor: pointer; font-size: 0.85rem; color: var(--text-muted);">Simulate different IP (for testing)</summary>
+          <div class="form-group" style="margin-top: 0.75rem;">
+            <label for="testIp">IP to simulate</label>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <input type="text" id="testIp" placeholder="Blank = your real IP" style="font-size: 0.9rem; flex: 1; min-width: 120px;">
+              <button type="button" class="btn btn-outline" id="randomIpBtn" style="white-space: nowrap;">Random IP</button>
+              <button type="button" class="btn btn-outline" id="clearIpBtn" style="white-space: nowrap;">Use my IP</button>
+            </div>
+            <div class="form-group" style="margin-top: 0.5rem;">
+              <label for="testDevice">Simulate device (optional)</label>
+              <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="testDevice" placeholder="Blank = your device" style="font-size: 0.9rem; flex: 1;">
+                <button type="button" class="btn btn-outline" id="randomDeviceBtn" style="white-space: nowrap;">Random</button>
+              </div>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;"><strong>Blocked (70%+):</strong> Wrong password 3x → Random IP → Random device → correct password. <strong>5 failed in a row</strong> → 10 min lock.</p>
+          </div>
+        </details>
+        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Login</button>
+      </form>
+      <div class="auth-links">
+        <p>Don't have an account? <a href="register.html">Register</a></p>
+        <p><a href="index.html">Back to Home</a></p>
+        <a href="admin.html" class="admin-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          Admin Panel
+        </a>
+      </div>
+    </div>
+  </div>
+  <script src="theme.js"></script>
+  <script>
+    document.getElementById("randomIpBtn").addEventListener("click", () => {
+      const a = Math.floor(Math.random() * 256);
+      const b = Math.floor(Math.random() * 256);
+      const c = Math.floor(Math.random() * 256);
+      const d = Math.floor(Math.random() * 256);
+      document.getElementById("testIp").value = `${a}.${b}.${c}.${d}`;
+    });
+    document.getElementById("clearIpBtn").addEventListener("click", () => {
+      document.getElementById("testIp").value = "";
+    });
+    document.getElementById("randomDeviceBtn").addEventListener("click", () => {
+      const devices = ["iPhone Safari", "Android Chrome", "Linux Firefox", "Mac Safari", "Windows Edge", "Mobile App v2"];
+      document.getElementById("testDevice").value = devices[Math.floor(Math.random() * devices.length)];
+    });
+
+    function getBrowserLocation() {
+      return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+          resolve(null);
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+          () => resolve(null),
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+        );
+      });
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("submitBtn");
+      const errEl = document.getElementById("error");
+      errEl.style.display = "none";
+      btn.disabled = true;
+      btn.textContent = "Getting location...";
+
+      let latitude, longitude;
+      try {
+        const loc = await getBrowserLocation();
+        if (loc) {
+          latitude = loc.lat;
+          longitude = loc.lon;
+        }
+      } catch (_) {}
+      btn.textContent = "Verifying...";
+
+      try {
+        const payload = {
+          username: document.getElementById("username").value,
+          password: document.getElementById("password").value,
+          testIp: document.getElementById("testIp").value.trim() || undefined,
+          testDevice: document.getElementById("testDevice").value.trim() || undefined,
+        };
+        if (latitude != null && longitude != null) {
+          payload.latitude = latitude;
+          payload.longitude = longitude;
+        }
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          if (res.status === 423) {
+            throw new Error(data.message || data.error || "Account temporarily locked.");
+          }
+          throw new Error(data.error || "Login failed");
+        }
+
+        if (data.action === "dashboard") {
+          window.location.href = "/dashboard.html";
+        } else if (data.action === "adaptive") {
+          window.location.href = "/adaptive_question.html";
+        } else if (data.action === "blocked") {
+          window.location.href = "/blocked.html";
+        }
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Login";
+      }
+    });
+  </script>
+</body>
+</html>
+

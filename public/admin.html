@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - FL-AHPS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <div class="bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+  <div id="loginScreen" class="centered-page" style="position: relative;">
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"
+      style="position: absolute; top: 1.5rem; right: 1.5rem;">
+      <svg class="icon-sun" viewBox="0 0 24 24">
+        <path
+          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+      </svg>
+      <svg class="icon-moon" style="display:none" viewBox="0 0 24 24">
+        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+      </svg>
+    </button>
+    <div class="auth-card">
+      <svg class="logo-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M24 4L6 12v12c0 11 7.5 21 18 24 10.5-3 18-13 18-24V12L24 4z" fill="url(#shield4)" stroke="currentColor"
+          stroke-width="1.5" />
+        <defs>
+          <linearGradient id="shield4" x1="6" y1="4" x2="42" y2="36" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#6366f1" />
+            <stop offset="1" stop-color="#4f46e5" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <h1>Admin Login</h1>
+      <p class="subtitle">FL-AHPS Admin Panel</p>
+      <div id="adminError" class="error-msg" style="display: none;"></div>
+      <form id="adminLoginForm">
+        <div class="form-group">
+          <label for="adminUser">Username</label>
+          <input type="text" id="adminUser" value="admin">
+        </div>
+        <div class="form-group">
+          <label for="adminPass">Password</label>
+          <input type="password" id="adminPass" value="admin123">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Login</button>
+      </form>
+      <a href="login.html" class="admin-link" style="display: inline-flex; margin-top: 1rem;">Back to User Login</a>
+    </div>
+  </div>
+
+  <div id="adminPanel" class="admin-layout" style="display: none;">
+    <aside class="admin-sidebar">
+      <div class="logo">FL-AHPS</div>
+      <nav>
+        <a href="#" class="active" data-section="overview">Overview</a>
+        <a href="#" data-section="users">Users</a>
+        <a href="#" data-section="logins">Login History</a>
+        <a href="#" data-section="locationHistory">Location History</a>
+        <a href="#" data-section="passwordPatterns">Password Patterns</a>
+        <a href="#" data-section="highRiskAlerts">High Risk Alerts</a>
+        <a href="#" data-section="timeBased">Time-Based Login</a>
+        <a href="#" data-section="reports">Security Report</a>
+      </nav>
+      <div style="margin-top: 2rem;">
+        <button class="btn btn-danger btn-block" id="adminLogout">Logout</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <div class="admin-header">
+        <h1 style="font-size: 1.5rem; font-weight: 600; margin: 0;">Admin Dashboard</h1>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <svg class="icon-sun" viewBox="0 0 24 24">
+            <path
+              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg class="icon-moon" style="display:none" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="value" id="statUsers">0</div>
+          <div class="label">Total Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="value" id="statLegitimate">0</div>
+          <div class="label">Legitimate Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="value" id="statLogins">0</div>
+          <div class="label">Total Logins</div>
+        </div>
+        <div class="stat-card">
+          <div class="value" id="statSuspicious">0</div>
+          <div class="label">Suspicious Logins</div>
+        </div>
+      </div>
+
+      <div id="sectionOverview" class="section">
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <h2>Global Risk Score Trend (Last 20 Logins)</h2>
+          <div class="chart-container" style="height: 300px;">
+            <canvas id="globalRiskTrendChart"></canvas>
+          </div>
+        </div>
+        <div class="charts-grid">
+          <div class="card">
+            <h2>Risk Distribution</h2>
+            <div class="chart-container">
+              <canvas id="riskChart"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Login Activity</h2>
+            <div class="chart-container">
+              <canvas id="activityChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionUsers" class="section" style="display: none;">
+        <div class="card">
+          <h2>All Users</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Created</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionLogins" class="section" style="display: none;">
+        <div class="card">
+          <h2>All Login Attempts</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>User</th>
+                  <th>IP</th>
+                  <th>Device</th>
+                  <th>Time</th>
+                  <th>Risk</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="loginsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionLocationHistory" class="section" style="display: none;">
+        <div class="card">
+          <h2>User Login Location History</h2>
+          <p style="margin-bottom: 0.75rem;">Locations are resolved from IP when you load this page. Click to resolve
+            more missing rows (saves to DB).</p>
+          <button type="button" class="btn btn-primary" id="btnResolveLocations" style="margin-bottom: 1rem;">Resolve
+            missing locations</button>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>IP</th>
+                  <th>City</th>
+                  <th>Country</th>
+                  <th>Login Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="locationHistoryTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionPasswordPatterns" class="section" style="display: none;">
+        <div class="card">
+          <h2>Password Attempt Patterns</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  <th>Count</th>
+                </tr>
+              </thead>
+              <tbody id="passwordPatternsTable"></tbody>
+            </table>
+          </div>
+          <div class="chart-container" style="height: 280px;"><canvas id="passwordPatternsChart"></canvas></div>
+        </div>
+      </div>
+
+      <div id="sectionHighRiskAlerts" class="section" style="display: none;">
+        <div class="card">
+          <h2>High Risk Alerts (risk ≥ 0.75)</h2>
+          <p style="margin-bottom: 0.75rem;">
+            <label>From <input type="date" id="highRiskFrom"></label>
+            <label style="margin-left: 0.5rem;">To <input type="date" id="highRiskTo"></label>
+            <button class="btn btn-outline" style="margin-left: 0.5rem;" onclick="loadHighRiskAlerts()">Filter</button>
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>IP</th>
+                  <th>City</th>
+                  <th>Country</th>
+                  <th>Time</th>
+                  <th>Risk</th>
+                </tr>
+              </thead>
+              <tbody id="highRiskAlertsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionTimeBased" class="section" style="display: none;">
+        <div class="card">
+          <h2>Time-Based Login Pattern (by hour)</h2>
+          <div class="chart-container" style="height: 320px;"><canvas id="timeBasedChart"></canvas></div>
+        </div>
+      </div>
+
+      <div id="sectionReports" class="section" style="display: none;">
+        <div class="card">
+          <h2>Download Security Report</h2>
+          <p style="margin-bottom: 1rem;">Export login attempts, high risk alerts, blocked users, location history,
+            password patterns, and time-based stats.</p>
+          <a href="/api/admin/security-report?format=csv" class="btn btn-primary" download="security-report.csv"
+            target="_blank">Download CSV</a>
+          <a href="/api/admin/security-report?format=pdf" class="btn btn-outline" style="margin-left: 0.5rem;"
+            download="security-report.pdf" target="_blank">Download PDF</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="userGraphModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="card"
+      style="width: 80%; max-width: 700px; max-height: 90vh; overflow-y: auto; background: var(--bg-primary); padding: 2rem; position: relative;">
+      <span
+        style="position: absolute; right: 1.5rem; top: 1.5rem; cursor: pointer; font-size: 1.5rem; color: var(--text-primary);"
+        onclick="closeUserGraphModal()">&times;</span>
+      <h2 id="modalUserTitle" style="margin-top: 0;">User History & Risk Graph</h2>
+
+      <div style="margin-top: 1.5rem;">
+        <h3>Risk Score Trend (Last 10 Logins)</h3>
+        <div class="chart-container" style="height: 300px; margin-top: 1rem;">
+          <canvas id="userRiskTrendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="theme.js"></script>
+  <script>
+    const CHART_COLORS = {
+      primary: '#6366f1',
+      success: '#10b981',
+      warning: '#f59e0b',
+      danger: '#ef4444',
+      info: '#3b82f6',
+      purple: '#8b5cf6',
+      cyan: '#06b6d4',
+      pink: '#ec4899',
+    };
+
+    let riskChart = null;
+    let activityChart = null;
+    let globalRiskTrendChart = null;
+
+    async function adminLogin(credentials) {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Login failed");
+      }
+    }
+
+    document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById("adminError");
+      errEl.style.display = "none";
+      try {
+        await adminLogin({
+          username: document.getElementById("adminUser").value,
+          password: document.getElementById("adminPass").value,
+        });
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("adminPanel").style.display = "flex";
+        loadAdminData();
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = "block";
+      }
+    });
+
+    async function loadAdminData() {
+      const [statsRes, riskRes, usersRes, loginsRes, locationRes, patternsRes, highRiskRes, timeRes] = await Promise.all([
+        fetch("/api/admin/stats"),
+        fetch("/api/admin/risk-distribution"),
+        fetch("/api/admin/users"),
+        fetch("/api/admin/logins"),
+        fetch("/api/admin/login-location-history"),
+        fetch("/api/admin/password-attempt-patterns"),
+        fetch("/api/admin/high-risk-alerts"),
+        fetch("/api/admin/time-based-login"),
+      ]);
+
+      if (!statsRes.ok) {
+        document.getElementById("loginScreen").style.display = "flex";
+        document.getElementById("adminPanel").style.display = "none";
+        return;
+      }
+
+      const stats = await statsRes.json();
+      const risk = await riskRes.json();
+      const users = await usersRes.json();
+      const logins = await loginsRes.json();
+      const locationHistory = locationRes.ok ? await locationRes.json() : [];
+      const passwordPatterns = patternsRes.ok ? await patternsRes.json() : { total: 0, attempts1: 0, attempts2: 0, attempts3Plus: 0 };
+      const highRiskAlerts = highRiskRes.ok ? await highRiskRes.json() : [];
+      const timeBased = timeRes.ok ? await timeRes.json() : [];
+
+      document.getElementById("statUsers").textContent = stats.totalUsers;
+      document.getElementById("statLegitimate").textContent = stats.legitimateUsers != null ? stats.legitimateUsers : "—";
+      document.getElementById("statLogins").textContent = stats.totalLogins;
+      document.getElementById("statSuspicious").textContent = stats.suspiciousLogins;
+
+      if (riskChart) riskChart.destroy();
+      const ctx = document.getElementById("riskChart").getContext("2d");
+      riskChart = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: ["Low Risk (<0.4)", "Medium Risk (0.4-0.75)", "High Risk (≥0.75)"],
+          datasets: [{
+            data: [risk.low, risk.medium, risk.high],
+            backgroundColor: [CHART_COLORS.success, CHART_COLORS.warning, CHART_COLORS.danger],
+            borderWidth: 0,
+            hoverOffset: 8,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "60%",
+          plugins: {
+            legend: { position: "bottom" },
+          },
+        },
+      });
+
+      const successCount = logins.filter(l => l.status === "success").length;
+      const failedCount = logins.filter(l => l.status === "failed").length;
+      const blockedCount = logins.filter(l => l.status === "blocked").length;
+
+      if (activityChart) activityChart.destroy();
+      const actCtx = document.getElementById("activityChart").getContext("2d");
+      activityChart = new Chart(actCtx, {
+        type: "bar",
+        data: {
+          labels: ["Success", "Failed", "Blocked"],
+          datasets: [{
+            label: "Count",
+            data: [successCount, failedCount, blockedCount],
+            backgroundColor: [CHART_COLORS.success, CHART_COLORS.warning, CHART_COLORS.danger],
+            borderRadius: 8,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: "rgba(255,255,255,0.05)" } },
+            x: { grid: { display: false } },
+          },
+        },
+      });
+
+      // Map global risk trend from the logins array
+      // logins is returned sorted by recent. We need the latest 20 that have a risk score
+      const loginsWithRisk = logins.filter(l => l.risk_score != null).slice(0, 20).reverse();
+      const trendLabels = loginsWithRisk.map(l => (l.username || l.ip || "Unknown") + " - " + l.id);
+      const trendData = loginsWithRisk.map(l => (l.risk_score * 100).toFixed(1));
+
+      if (globalRiskTrendChart) globalRiskTrendChart.destroy();
+      const glCtx = document.getElementById("globalRiskTrendChart").getContext("2d");
+      globalRiskTrendChart = new Chart(glCtx, {
+        type: "line",
+        data: {
+          labels: trendLabels.length ? trendLabels : ["No data"],
+          datasets: [{
+            label: "Risk %",
+            data: trendData.length ? trendData : [0],
+            borderColor: CHART_COLORS.primary,
+            backgroundColor: "rgba(99, 102, 241, 0.1)",
+            fill: true,
+            tension: 0.4,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { min: 0, max: 100, grid: { color: "rgba(255,255,255,0.05)" } },
+            x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45 } },
+          },
+        },
+      });
+
+      // DB stores UTC; parse as UTC then show IST 24h
+      const parseUTC = (d) => {
+        if (d == null) return null;
+        if (typeof d === "string" && !/Z|[+-]\d{2}:?\d{2}$/.test(d)) return new Date(d.trim().replace(" ", "T") + "Z");
+        return new Date(d);
+      };
+      const toIST = (d) => d == null ? "—" : parseUTC(d).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", hour12: false });
+      const toISTDate = (d) => d == null ? "—" : parseUTC(d).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+      document.getElementById("usersTable").innerHTML = users.map(u => `
+        <tr>
+          <td>${u.id}</td>
+          <td>${u.username}</td>
+          <td>${u.email}</td>
+          <td>${toISTDate(u.created_at)}</td>
+          <td><span class="badge badge-${u.blocked ? "danger" : "safe"}">${u.blocked ? "Blocked" : "Active"}</span></td>
+          <td>
+            ${u.blocked
+          ? `<button class="btn btn-success" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="unblockUser(${u.id})">Unblock</button>`
+          : `<button class="btn btn-danger" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="blockUser(${u.id})">Block</button>`
+        }
+            <button class="btn btn-warning" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; margin-left: 0.25rem;" onclick="resetAttempts(${u.id})">Reset Attempts</button>
+            <button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; margin-left: 0.25rem;" onclick="resetRisk(${u.id})">Reset Risk</button>
+            <button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; margin-left: 0.25rem;" onclick="viewHistory(${u.id})">History</button>
+            <button class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; margin-left: 0.25rem;" onclick="viewUserGraph(${u.id}, '${u.username}')">Graph</button>
+          </td>
+        </tr>
+      `).join("");
+
+      document.getElementById("loginsTable").innerHTML = logins.map(l => `
+        <tr>
+          <td>${l.id}</td>
+          <td>${l.username || "—"}</td>
+          <td>${l.ip || "—"}</td>
+          <td>${(l.device || "—").substring(0, 30)}${(l.device || "").length > 30 ? "…" : ""}</td>
+          <td>${toIST(l.login_time)}</td>
+          <td>${l.risk_score != null ? (l.risk_score * 100).toFixed(1) + "%" : "—"}</td>
+          <td><span class="badge badge-${l.status === "success" ? "safe" : l.status === "blocked" ? "danger" : "medium"}">${l.status || "—"}</span></td>
+          <td>
+            ${l.user_id ? `<button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="viewHistory(${l.user_id})">View User</button>` : "—"}
+          </td>
+        </tr>
+      `).join("");
+
+      const isLocal = (ip) => !ip || ip === "::1" || ip === "127.0.0.1" || String(ip).includes("127.0.0.1");
+      function renderLocationHistoryTable(data) {
+        document.getElementById("locationHistoryTable").innerHTML = data.map(l => {
+          const noLoc = !l.city && !l.country;
+          const city = l.city || (noLoc && isLocal(l.ip) ? "Local" : "—");
+          const country = l.country || (noLoc && isLocal(l.ip) ? "This device" : "—");
+          return `<tr>
+            <td>${l.username || l.user_id || "—"}</td>
+            <td>${l.ip || "—"}</td>
+            <td>${city}</td>
+            <td>${country}</td>
+            <td>${toIST(l.login_time)}</td>
+            <td><span class="badge badge-${l.status === "success" ? "safe" : l.status === "blocked" ? "danger" : "medium"}">${l.status || "—"}</span></td>
+          </tr>`;
+        }).join("");
+      }
+      renderLocationHistoryTable(locationHistory);
+
+      document.getElementById("passwordPatternsTable").innerHTML = `
+        <tr><td>Total login attempts</td><td>${passwordPatterns.total}</td></tr>
+        <tr><td>Attempts = 1</td><td>${passwordPatterns.attempts1}</td></tr>
+        <tr><td>Attempts = 2</td><td>${passwordPatterns.attempts2}</td></tr>
+        <tr><td>Attempts ≥ 3</td><td>${passwordPatterns.attempts3Plus}</td></tr>
+      `;
+      if (window.passwordPatternsChart) window.passwordPatternsChart.destroy();
+      const ppCtx = document.getElementById("passwordPatternsChart").getContext("2d");
+      window.passwordPatternsChart = new Chart(ppCtx, {
+        type: "bar",
+        data: {
+          labels: ["Attempts = 1", "Attempts = 2", "Attempts ≥ 3"],
+          datasets: [{ label: "Count", data: [passwordPatterns.attempts1, passwordPatterns.attempts2, passwordPatterns.attempts3Plus], backgroundColor: [CHART_COLORS.success, CHART_COLORS.warning, CHART_COLORS.danger], borderRadius: 8 }],
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+      });
+
+      document.getElementById("highRiskAlertsTable").innerHTML = highRiskAlerts.map(h => `
+        <tr>
+          <td>${h.username || h.user_id || "—"}</td>
+          <td>${h.ip || "—"}</td>
+          <td>${h.city || "—"}</td>
+          <td>${h.country || "—"}</td>
+          <td>${toIST(h.login_time)}</td>
+          <td>${h.risk_score != null ? (h.risk_score * 100).toFixed(1) + "%" : "—"}</td>
+        </tr>
+      `).join("");
+
+      if (window.timeBasedChart) window.timeBasedChart.destroy();
+      const tbCtx = document.getElementById("timeBasedChart").getContext("2d");
+      window.timeBasedChart = new Chart(tbCtx, {
+        type: "bar",
+        data: {
+          labels: timeBased.map(t => t.hourLabel),
+          datasets: [{ label: "Logins", data: timeBased.map(t => t.count), backgroundColor: CHART_COLORS.primary, borderRadius: 4 }],
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+      });
+    }
+
+    document.getElementById("btnResolveLocations").addEventListener("click", async function () {
+      const btn = this;
+      btn.disabled = true;
+      btn.textContent = "Resolving…";
+      try {
+        const res = await fetch("/api/admin/login-location-history?limit=500");
+        const data = await res.json();
+        const isLocal = (ip) => !ip || ip === "::1" || ip === "127.0.0.1" || String(ip).includes("127.0.0.1");
+        const toIST = (d) => d == null ? "—" : (() => { const x = typeof d === "string" && !/Z|[+-]\d{2}:?\d{2}$/.test(d) ? new Date(d.trim().replace(" ", "T") + "Z") : new Date(d); return x.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", hour12: false }); })();
+        document.getElementById("locationHistoryTable").innerHTML = data.map(l => {
+          const noLoc = !l.city && !l.country;
+          const city = l.city || (noLoc && isLocal(l.ip) ? "Local" : "—");
+          const country = l.country || (noLoc && isLocal(l.ip) ? "This device" : "—");
+          return `<tr><td>${l.username || l.user_id || "—"}</td><td>${l.ip || "—"}</td><td>${city}</td><td>${country}</td><td>${toIST(l.login_time)}</td><td><span class="badge badge-${l.status === "success" ? "safe" : l.status === "blocked" ? "danger" : "medium"}">${l.status || "—"}</span></td></tr>`;
+        }).join("");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Resolve missing locations";
+      }
+    });
+
+    async function loadHighRiskAlerts() {
+      const from = document.getElementById("highRiskFrom").value || "";
+      const to = document.getElementById("highRiskTo").value || "";
+      const url = `/api/admin/high-risk-alerts${from || to ? "?" + [from && "from=" + from, to && "to=" + to].filter(Boolean).join("&") : ""}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      document.getElementById("highRiskAlertsTable").innerHTML = data.map(h => `
+        <tr>
+          <td>${h.username || h.user_id || "—"}</td>
+          <td>${h.ip || "—"}</td>
+          <td>${h.city || "—"}</td>
+          <td>${h.country || "—"}</td>
+          <td>${toIST(h.login_time)}</td>
+          <td>${h.risk_score != null ? (h.risk_score * 100).toFixed(1) + "%" : "—"}</td>
+        </tr>
+      `).join("");
+    }
+
+    async function blockUser(id) {
+      await fetch(`/api/admin/block/${id}`, { method: "POST" });
+      loadAdminData();
+    }
+
+    async function unblockUser(id) {
+      await fetch(`/api/admin/unblock/${id}`, { method: "POST" });
+      loadAdminData();
+    }
+
+    async function resetAttempts(id) {
+      await fetch(`/api/admin/reset-attempts/${id}`, { method: "POST" });
+      loadAdminData();
+    }
+
+    async function resetRisk(id) {
+      await fetch(`/api/admin/reset-risk/${id}`, { method: "POST" });
+      loadAdminData();
+    }
+
+    async function viewHistory(userId) {
+      const res = await fetch(`/api/admin/user-history/${userId}`);
+      const history = await res.json();
+      const msg = history.length
+        ? history.map(h => `${(function (d) { if (!d) return "—"; const x = typeof d === "string" && !/Z|[+-]\\d{2}:?\\d{2}$/.test(d) ? new Date(d.trim().replace(" ", "T") + "Z") : new Date(d); return x.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", hour12: false }); })(h.login_time)} | ${h.ip || "—"} | Risk: ${h.risk_score != null ? (h.risk_score * 100).toFixed(1) + "%" : "—"} | ${h.status}`).join("\n")
+        : "No history";
+      alert("Login History for User " + userId + ":\n\n" + msg);
+    }
+
+    let userRiskTrendChart = null;
+
+    function closeUserGraphModal() {
+      document.getElementById("userGraphModal").style.display = "none";
+    }
+
+    async function viewUserGraph(userId, username) {
+      document.getElementById("userGraphModal").style.display = "flex";
+      document.getElementById("modalUserTitle").textContent = "Risk Score Trend: " + (username || "User " + userId);
+
+      const res = await fetch(`/api/admin/user-history/${userId}`);
+      const historyArr = await res.json();
+
+      const withRisk = (historyArr.filter(h => h.risk_score != null).reverse()).slice(-10);
+      const labels = withRisk.map((_, i) => `#${withRisk.length - i}`);
+      const riskData = withRisk.map(h => (h.risk_score * 100).toFixed(1));
+
+      if (userRiskTrendChart) userRiskTrendChart.destroy();
+      const ctx = document.getElementById("userRiskTrendChart").getContext("2d");
+      userRiskTrendChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: labels.length ? labels : ["No data"],
+          datasets: [{
+            label: "Risk %",
+            data: riskData.length ? riskData : [0],
+            borderColor: CHART_COLORS.primary,
+            backgroundColor: "rgba(99, 102, 241, 0.1)",
+            fill: true,
+            tension: 0.4,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { min: 0, max: 100, grid: { color: "rgba(255,255,255,0.05)" } },
+            x: { grid: { display: false } },
+          },
+        },
+      });
+    }
+
+    document.getElementById("adminLogout").addEventListener("click", async () => {
+      await fetch("/api/admin/logout", { method: "POST" });
+      document.getElementById("loginScreen").style.display = "flex";
+      document.getElementById("adminPanel").style.display = "none";
+    });
+
+    document.querySelectorAll(".admin-sidebar nav a").forEach(a => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        document.querySelectorAll(".admin-sidebar nav a").forEach(x => x.classList.remove("active"));
+        a.classList.add("active");
+        document.querySelectorAll(".section").forEach(s => s.style.display = "none");
+        document.getElementById("section" + a.dataset.section.charAt(0).toUpperCase() + a.dataset.section.slice(1)).style.display = "block";
+      });
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Identity - FL-AHPS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+    <svg class="icon-sun" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+    <svg class="icon-moon" style="display:none" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+  </button>
+  <div class="centered-page">
+    <div class="auth-card" style="max-width: 480px;">
+      <svg class="logo-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M24 4L6 12v12c0 11 7.5 21 18 24 10.5-3 18-13 18-24V12L24 4z" fill="url(#shield3)" stroke="currentColor" stroke-width="1.5"/>
+        <defs><linearGradient id="shield3" x1="6" y1="4" x2="42" y2="36" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#4f46e5"/></linearGradient></defs>
+      </svg>
+      <h1>Additional Verification</h1>
+      <p class="subtitle">We detected unusual login activity</p>
+
+      <div class="risk-meter">
+        <div class="risk-meter-fill risk-medium" id="riskMeter" style="width: 50%;"></div>
+      </div>
+      <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+        Risk level: <span id="riskLabel">Medium</span>
+      </p>
+
+      <p id="question" style="font-size: 1.1rem; margin-bottom: 1rem; line-height: 1.6;">
+        Is this you attempting to login?
+      </p>
+
+      <div class="adaptive-buttons">
+        <button class="btn btn-success" id="btnYes">Yes, it's me</button>
+        <button class="btn btn-danger" id="btnNo">No, block access</button>
+      </div>
+
+      <div id="error" class="error-msg" style="display: none; margin-top: 1rem;"></div>
+    </div>
+  </div>
+  <script src="theme.js"></script>
+  <script>
+    async function loadQuestion() {
+      const res = await fetch("/api/adaptive-question");
+      if (!res.ok) {
+        window.location.href = "/login.html";
+        return;
+      }
+      const data = await res.json();
+
+      document.getElementById("question").textContent = data.question;
+      const risk = data.riskScore ?? 0.5;
+      document.getElementById("riskMeter").style.width = (risk * 100) + "%";
+      document.getElementById("riskLabel").textContent = risk >= 0.7 ? "High" : "Medium (" + (risk * 100).toFixed(0) + "%)";
+
+      const meter = document.getElementById("riskMeter");
+      meter.className = "risk-meter-fill " + (risk >= 0.7 ? "risk-high" : "risk-medium");
+    }
+
+    async function answer(val) {
+      const errEl = document.getElementById("error");
+      errEl.style.display = "none";
+      document.getElementById("btnYes").disabled = true;
+      document.getElementById("btnNo").disabled = true;
+
+      try {
+        const res = await fetch("/api/adaptive-answer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ answer: val }),
+        });
+        const data = await res.json();
+
+        if (data.success && data.action === "dashboard") {
+          window.location.href = "/dashboard.html";
+        } else {
+          window.location.href = "/blocked.html";
+        }
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = "block";
+      } finally {
+        document.getElementById("btnYes").disabled = false;
+        document.getElementById("btnNo").disabled = false;
+      }
+    }
+
+    document.getElementById("btnYes").addEventListener("click", () => answer("yes"));
+    document.getElementById("btnNo").addEventListener("click", () => answer("no"));
+
+    loadQuestion();
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - FL-AHPS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+  <nav class="navbar">
+    <span class="brand">FL-AHPS</span>
+    <div class="navbar-actions">
+      <a href="/dashboard.html">Dashboard</a>
+      <span style="margin: 0 1rem; color: var(--border);">|</span>
+      <a href="#" id="logoutBtn">Logout</a>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <svg class="icon-sun" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <svg class="icon-moon" style="display:none" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="dashboard-header">
+      <h1>Welcome, <span id="username">...</span></h1>
+      <div>
+        <span class="badge" id="riskBadge">—</span>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="card">
+        <h2>Risk Score Trend (Last 10 Logins)</h2>
+        <div class="chart-container">
+          <canvas id="riskTrendChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Risk Category (Last 10)</h2>
+        <div class="chart-container">
+          <canvas id="riskCategoryChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Login Status Distribution</h2>
+        <div class="chart-container">
+          <canvas id="statusChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <details id="whyRiskDetails" style="margin-bottom: 1rem;">
+        <summary style="cursor: pointer; font-weight: 600; color: var(--text-secondary);">Why this risk?</summary>
+        <div id="whyRiskContent" style="margin-top: 1rem; padding: 1rem; background: var(--bg-primary); border-radius: 8px; font-size: 0.9rem; line-height: 1.7; color: var(--text-secondary);">
+          <p>Contributing factors from your last login:</p>
+          <ul id="riskFactorsList" style="margin: 0.5rem 0 0 1.5rem; list-style: none; padding: 0;"></ul>
+          <p id="noFactorsMsg" style="display: none; color: var(--text-muted);">No breakdown available for this login.</p>
+        </div>
+      </details>
+      <details style="margin-bottom: 1rem;">
+        <summary style="cursor: pointer; font-weight: 600; color: var(--text-secondary);">How does Risk Score work?</summary>
+        <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-primary); border-radius: 8px; font-size: 0.9rem; line-height: 1.7; color: var(--text-secondary);">
+          <p><strong>Step 1 – Features (7 inputs to ML):</strong></p>
+          <ul style="margin: 0.5rem 0 1rem 1.5rem;">
+            <li><code>ip_new</code> – New IP? (0 or 1)</li>
+            <li><code>location_new</code> – New location? (0 or 1)</li>
+            <li><code>device_new</code> – New device? (0 or 1)</li>
+            <li><code>time_deviation</code> – Outside usual login hours? (0–1)</li>
+            <li><code>password_attempts</code> – 1 + failed attempts in last 24h</li>
+            <li><code>failed_attempts_24h</code> – Count of wrong passwords in last 24h</li>
+            <li><code>geo_distance</code> – Distance from usual location</li>
+          </ul>
+          <p><strong>Step 2 – ML model</strong> (Random Forest) predicts risk 0–100%.</p>
+          <p><strong>Step 3 – Decision:</strong></p>
+          <ul style="margin: 0.5rem 0 1rem 1.5rem;">
+            <li>Risk &lt; 30% → Allow (dashboard)</li>
+            <li>30% ≤ Risk &lt; 70% → Adaptive question</li>
+            <li>Risk ≥ 70% → Blocked</li>
+          </ul>
+          <p><strong>Step 4 – After success:</strong> Failed attempts are cleared. Next login uses 0 failed attempts → lower risk.</p>
+        </div>
+      </details>
+      <h2>Security Status</h2>
+      <div id="securityStatus">Loading...</div>
+      <div class="risk-meter" style="margin-top: 1rem;">
+        <div class="risk-meter-fill" id="riskMeter" style="width: 0%;"></div>
+      </div>
+      <button class="btn btn-warning" id="resetAttemptsBtn" style="margin-top: 1rem;">
+        Reset Failed Attempts
+      </button>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
+        Clears failed login count. Next login will show lower risk score.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Recent Login History</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>IP</th>
+              <th>Device</th>
+              <th>Risk Score</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="historyTable">
+            <tr><td colspan="5">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="theme.js"></script>
+  <script>
+    const CHART_COLORS = {
+      primary: '#6366f1',
+      success: '#10b981',
+      warning: '#f59e0b',
+      danger: '#ef4444',
+      info: '#3b82f6',
+      purple: '#8b5cf6',
+      cyan: '#06b6d4',
+      pink: '#ec4899',
+    };
+
+    let riskTrendChart = null;
+    let statusChart = null;
+    let riskCategoryChart = null;
+
+    async function loadDashboard() {
+      const res = await fetch("/api/me");
+      if (!res.ok) {
+        window.location.href = "/login.html";
+        return;
+      }
+      const data = await res.json();
+
+      document.getElementById("username").textContent = data.username;
+
+      const lastLogin = data.history?.[0];
+      const lastSuccess = data.history?.find(h => h.status === "success");
+      const riskScore = (lastSuccess || lastLogin)?.risk_score ?? 0;
+      const riskBadge = document.getElementById("riskBadge");
+      const riskMeter = document.getElementById("riskMeter");
+
+      if (lastLogin?.status === "failed") {
+        riskBadge.textContent = "Last: Failed";
+        riskBadge.className = "badge badge-danger";
+        riskMeter.className = "risk-meter-fill risk-high";
+        riskMeter.style.width = "100%";
+      } else if (riskScore < 0.3) {
+        riskBadge.textContent = "Low Risk";
+        riskBadge.className = "badge badge-safe";
+        riskMeter.className = "risk-meter-fill risk-low";
+        riskMeter.style.width = (riskScore * 100) + "%";
+      } else if (riskScore < 0.7) {
+        riskBadge.textContent = "Medium Risk";
+        riskBadge.className = "badge badge-medium";
+        riskMeter.className = "risk-meter-fill risk-medium";
+        riskMeter.style.width = (riskScore * 100) + "%";
+      } else {
+        riskBadge.textContent = "High Risk";
+        riskBadge.className = "badge badge-danger";
+        riskMeter.className = "risk-meter-fill risk-high";
+        riskMeter.style.width = (riskScore * 100) + "%";
+      }
+
+      const factors = Array.isArray(lastLogin?.risk_factors) ? lastLogin.risk_factors : [];
+      const factorsList = document.getElementById("riskFactorsList");
+      const noFactorsMsg = document.getElementById("noFactorsMsg");
+      if (factors && factors.length > 0) {
+        noFactorsMsg.style.display = "none";
+        factorsList.innerHTML = factors.map(f => `
+          <li style="margin-bottom: 0.5rem;">
+            <strong>+${f.percent}%</strong> ${f.label}
+            ${f.reason ? `<br><span style="color: var(--text-muted); font-size: 0.85rem;">${f.reason}</span>` : ""}
+          </li>
+        `).join("");
+      } else {
+        factorsList.innerHTML = "";
+        noFactorsMsg.style.display = "block";
+      }
+
+      const parseUTC = (d) => { if (d == null) return null; if (typeof d === "string" && !/Z|[+-]\d{2}:?\d{2}$/.test(d)) return new Date(d.trim().replace(" ", "T") + "Z"); return new Date(d); };
+      const toIST = (d) => d == null ? "—" : parseUTC(d).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", hour12: false });
+      document.getElementById("securityStatus").innerHTML = lastLogin
+        ? `Last login: ${toIST(lastLogin.login_time)} — ${lastLogin.status || "success"}`
+        : "No login history yet.";
+
+      const tbody = document.getElementById("historyTable");
+      if (!data.history?.length) {
+        tbody.innerHTML = "<tr><td colspan='5'>No login history</td></tr>";
+      } else {
+        tbody.innerHTML = data.history.map(h => `
+          <tr>
+            <td>${toIST(h.login_time)}</td>
+            <td>${h.ip || "—"}</td>
+            <td>${(h.device || "—").substring(0, 40)}...</td>
+            <td>${h.risk_score != null ? (h.risk_score * 100).toFixed(1) + "%" : "—"}</td>
+            <td><span class="badge badge-${h.status === "success" ? "safe" : h.status === "blocked" || h.status === "failed" ? "danger" : "medium"}">${h.status || "—"}</span></td>
+          </tr>
+        `).join("");
+      }
+
+      buildCharts(data.history || []);
+    }
+
+    function buildCharts(history) {
+      const withRisk = (history.filter(h => h.risk_score != null).reverse()).slice(-10);
+      const labels = withRisk.map((_, i) => `#${withRisk.length - i}`);
+      const riskData = withRisk.map(h => (h.risk_score * 100).toFixed(1));
+
+      if (riskTrendChart) riskTrendChart.destroy();
+      const trendCtx = document.getElementById("riskTrendChart")?.getContext("2d");
+      if (trendCtx) {
+        riskTrendChart = new Chart(trendCtx, {
+          type: "line",
+          data: {
+            labels: labels.length ? labels : ["No data"],
+            datasets: [{
+              label: "Risk %",
+              data: riskData.length ? riskData : [0],
+              borderColor: CHART_COLORS.primary,
+              backgroundColor: "rgba(99, 102, 241, 0.1)",
+              fill: true,
+              tension: 0.4,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { min: 0, max: 100, grid: { color: "rgba(255,255,255,0.05)" } },
+              x: { grid: { display: false } },
+            },
+          },
+        });
+      }
+
+      const last10 = history.slice(0, 10);
+      const lowCount = last10.filter(h => h.risk_score != null && h.risk_score < 0.3).length;
+      const medCount = last10.filter(h => h.risk_score != null && h.risk_score >= 0.3 && h.risk_score < 0.7).length;
+      const highCount = last10.filter(h => h.risk_score != null && h.risk_score >= 0.7).length;
+      if (riskCategoryChart) riskCategoryChart.destroy();
+      const catCtx = document.getElementById("riskCategoryChart")?.getContext("2d");
+      if (catCtx) {
+        riskCategoryChart = new Chart(catCtx, {
+          type: "doughnut",
+          data: {
+            labels: ["Low (<30%)", "Medium (30–70%)", "High (≥70%)"],
+            datasets: [{
+              data: [lowCount, medCount, highCount],
+              backgroundColor: [CHART_COLORS.success, CHART_COLORS.warning, CHART_COLORS.danger],
+              borderWidth: 0,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "65%",
+            plugins: { legend: { position: "bottom" } },
+          },
+        });
+      }
+
+      const successCount = history.filter(h => h.status === "success").length;
+      const failedCount = history.filter(h => h.status === "failed").length;
+      const blockedCount = history.filter(h => h.status === "blocked").length;
+
+      if (statusChart) statusChart.destroy();
+      const statusCtx = document.getElementById("statusChart")?.getContext("2d");
+      if (statusCtx) {
+        statusChart = new Chart(statusCtx, {
+          type: "doughnut",
+          data: {
+            labels: ["Success", "Failed", "Blocked"],
+            datasets: [{
+              data: [successCount, failedCount, blockedCount],
+              backgroundColor: [CHART_COLORS.success, CHART_COLORS.warning, CHART_COLORS.danger],
+              borderWidth: 0,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "65%",
+            plugins: {
+              legend: { position: "bottom" },
+            },
+          },
+        });
+      }
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await fetch("/api/logout", { method: "POST" });
+      window.location.href = "/login.html";
+    });
+
+    document.getElementById("resetAttemptsBtn").addEventListener("click", async () => {
+      const btn = document.getElementById("resetAttemptsBtn");
+      btn.disabled = true;
+      btn.textContent = "Resetting...";
+      try {
+        const res = await fetch("/api/reset-failed-attempts", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          alert("Failed attempts reset! Log out and log in again to see lower risk score.");
+          loadDashboard();
+        } else {
+          alert(data.error || "Failed to reset. Please try again.");
+        }
+      } catch (err) {
+        alert("Failed to reset. " + (err.message || "Please try again."));
+      }
+      btn.disabled = false;
+      btn.textContent = "Reset Failed Attempts";
+    });
+
+    loadDashboard();
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,8 @@
+node_modules/
+.env
+*.db
+__pycache__/
+*.pyc
+*.pkl
+feature_importance.png
+roc_curve.png
